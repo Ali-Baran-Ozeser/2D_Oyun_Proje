@@ -17,13 +17,23 @@ const input = new InputHandler(); // HATA 1 ÇÖZÜMÜ: Input'u başlattık
 
 // duvar
 const imgWall = new Image();
-imgWall.src = './assets/environment/wallblue.png';
+imgWall.src = './assets/environment/wallgrey.png';
+
+// hücre kapısı
+const imgCellDoor = new Image();
+imgCellDoor.src = './assets/environment/celldoor2.png';
+
+// zemin
+const imgGround = new Image();
+imgGround.src = './assets/environment/ground.png';
 
 let walls = [];
+let cellDoors = [];
 let door = null;
 
 function loadLevel(levelIndex) {
     walls = [];
+    cellDoors = [];
     door = null;
     const map = levels[levelIndex];
 
@@ -38,6 +48,9 @@ function loadLevel(levelIndex) {
             else if (tileId === 3) {
                 player.x = x + (TILE_SIZE - player.width) / 2;
                 player.y = y + (TILE_SIZE - player.height) / 2;
+            }
+            else if (tileId === 4) {
+                cellDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE});
             }
         }
     }
@@ -66,6 +79,16 @@ function update() {
 
     // Animasyonu güncelle
     player.updateAnimation(isMoving);
+
+    // kapıların açılıp kapanmasını kontrol ediyoruz
+    for(let i = 0; i < cellDoors.length; i++){
+        let currentCellDoor = cellDoors[i];
+        if(checkCollision(player,currentCellDoor)){
+            currentCellDoor.isOpen = true;
+        }else{
+            currentCellDoor.isOpen = false;
+        }
+    }
 
     let canMoveX = true;
     let canMoveY = true;
@@ -105,6 +128,16 @@ function draw() {
         ctx.translate(-camX, -camY); 
 
         // --- DÜNYA ÇİZİMLERİ (Kameradan etkilenen her şey bu araya yazılır) ---
+
+        // zemini çiziyoruz
+        const currentMap = levels[currentLevel];
+        for(let row = 0; row < currentMap.length; row++){
+            for(let col = 0; col < currentMap[row].length; col++){
+                const x = col * TILE_SIZE;
+                const y = row * TILE_SIZE;
+                ctx.drawImage(imgGround, x, y, TILE_SIZE, TILE_SIZE);
+            }
+        }
         
         for (let wall of walls) {
             ctx.drawImage(imgWall, wall.x, wall.y, wall.width, wall.height);
@@ -113,6 +146,13 @@ function draw() {
         if (door) {
             ctx.fillStyle = '#d35400';
             ctx.fillRect(door.x, door.y, door.width, door.height);
+        }
+
+        // hücre kapılarını çiziyoruz
+        for(let cDoor of cellDoors){
+            if(!cDoor.isOpen){
+                ctx.drawImage(imgCellDoor, cDoor.x, cDoor.y, cDoor.width, cDoor.height);
+            }
         }
 
         player.draw(ctx);

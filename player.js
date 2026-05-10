@@ -4,7 +4,7 @@ class Player {
         this.height = 24;
         this.x = 100;
         this.y = 500;
-        this.speed = 4;
+        this.speed = 2;
 
         // 1. DURMA RESMİ
         this.imgIdle = new Image();
