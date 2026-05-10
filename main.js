@@ -8,33 +8,20 @@ document.body.appendChild(canvas);
 ctx.imageSmoothingEnabled = false;
 
 // --- OYUN AYARLARI ---
-const TILE_SIZE = 40; // 1280/40 = 32 kolon, 720/40 = 18 satır
+const TILE_SIZE = 32; // 1280/40 = 32 kolon, 720/40 = 18 satır
 let currentLevel = 0;
 let gameState = "PLAYING"; // PLAYING, FINISHED
 
-// Tuş Kontrolleri
-const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
-
-window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
-
-// Oyuncu Objesi
-const player = {
-    x: 0, y: 0, 
-    width: 32, height: 32, // Tile boyutundan biraz küçük olması hareket kolaylığı sağlar
-    speed: 5,
-    color: '#e74c3c' // Kendi karakter asset'ini ekleyene kadar kırmızı bir kare
-};
+const player = new Player();
+const input = new InputHandler(); // HATA 1 ÇÖZÜMÜ: Input'u başlattık
 
 // duvar
 const imgWall = new Image();
 imgWall.src = './assets/environment/wallblue.png';
 
-// Harita Elemanları
 let walls = [];
 let door = null;
 
-// Haritayı oku ve duvarları/kapıları oluştur
 function loadLevel(levelIndex) {
     walls = [];
     door = null;
@@ -46,12 +33,9 @@ function loadLevel(levelIndex) {
             const x = col * TILE_SIZE;
             const y = row * TILE_SIZE;
 
-            if (tileId === 1) {
-                walls.push({ x: x, y: y, width: TILE_SIZE, height: TILE_SIZE });
-            } else if (tileId === 2) {
-                door = { x: x, y: y, width: TILE_SIZE, height: TILE_SIZE };
-            } else if (tileId === 3) {
-                // Oyuncuyu ortalayarak başlat (32x32 boyutlarında olduğu için)
+            if (tileId === 1) walls.push({ x: x, y: y, width: TILE_SIZE, height: TILE_SIZE });
+            else if (tileId === 2) door = { x: x, y: y, width: TILE_SIZE, height: TILE_SIZE };
+            else if (tileId === 3) {
                 player.x = x + (TILE_SIZE - player.width) / 2;
                 player.y = y + (TILE_SIZE - player.height) / 2;
             }
@@ -59,7 +43,6 @@ function loadLevel(levelIndex) {
     }
 }
 
-// Basit Kutu Çarpışma Testi (AABB Collision)
 function checkCollision(rect1, rect2) {
     return (
         rect1.x < rect2.x + rect2.width &&
@@ -69,69 +52,80 @@ function checkCollision(rect1, rect2) {
     );
 }
 
-// Oyun İçi Hesaplamalar
 function update() {
     if (gameState !== "PLAYING") return;
 
     let nextX = player.x;
     let nextY = player.y;
+    let isMoving = false; // Başlangıçta hareket yok kabul ediyoruz
 
-    if (keys.w || keys.ArrowUp) nextY -= player.speed;
-    if (keys.s || keys.ArrowDown) nextY += player.speed;
-    if (keys.a || keys.ArrowLeft) nextX -= player.speed;
-    if (keys.d || keys.ArrowRight) nextX += player.speed;
+    if (input.keys['KeyW'] || input.keys['ArrowUp']) { nextY -= player.speed; isMoving = true; }
+    if (input.keys['KeyS'] || input.keys['ArrowDown']) { nextY += player.speed; isMoving = true; }
+    if (input.keys['KeyA'] || input.keys['ArrowLeft']) { nextX -= player.speed; isMoving = true; player.facingRight = false;}
+    if (input.keys['KeyD'] || input.keys['ArrowRight']) { nextX += player.speed; isMoving = true; player.facingRight = true;}
 
-    // Duvar Çarpışma Kontrolü (X ve Y ekseni ayrı ayrı kontrol edilir ki duvara sürtünerek kayabilelim)
+    // Animasyonu güncelle
+    player.updateAnimation(isMoving);
+
     let canMoveX = true;
     let canMoveY = true;
 
     for (let wall of walls) {
-        if (checkCollision({ x: nextX, y: player.y, width: player.width, height: player.height }, wall)) {
-            canMoveX = false;
-        }
-        if (checkCollision({ x: player.x, y: nextY, width: player.width, height: player.height }, wall)) {
-            canMoveY = false;
-        }
+        if (checkCollision({ x: nextX, y: player.y, width: player.width, height: player.height }, wall)) canMoveX = false;
+        if (checkCollision({ x: player.x, y: nextY, width: player.width, height: player.height }, wall)) canMoveY = false;
     }
 
     if (canMoveX) player.x = nextX;
     if (canMoveY) player.y = nextY;
 
-    // Kapıya ulaşma kontrolü
     if (door && checkCollision(player, door)) {
         currentLevel++;
-        if (currentLevel < levels.length) {
-            loadLevel(currentLevel);
-        } else {
-            gameState = "FINISHED";
-        }
+        if (currentLevel < levels.length) loadLevel(currentLevel);
+        else gameState = "FINISHED";
     }
 }
 
-// Ekrana Çizim Yapma
+// Ne kadar yakınlaşacağımızı belirliyoruz (Örn: 2 kat)
+const zoom = 2; 
+
 function draw() {
-    // Arka planı temizle
+    // 1. Ekranı temizle
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (gameState === "PLAYING") {
         
+        ctx.save(); // KAMERA BAŞLANGICI: Çizim ayarlarını kaydet
+
+        // 2. Kameranın bakacağı X ve Y koordinatlarını hesapla (Oyuncunun tam ortası)
+        let camX = player.x + (player.width / 2) - (canvas.width / 2) / zoom;
+        let camY = player.y + (player.height / 2) - (canvas.height / 2) / zoom;
+
+        // 3. Ekranı yakınlaştır ve dünyayı oyuncunun tersine kaydır
+        ctx.scale(zoom, zoom); 
+        ctx.translate(-camX, -camY); 
+
+        // --- DÜNYA ÇİZİMLERİ (Kameradan etkilenen her şey bu araya yazılır) ---
+        
         for (let wall of walls) {
-            // ctx.fillRect yerine drawImage kullanıyoruz
             ctx.drawImage(imgWall, wall.x, wall.y, wall.width, wall.height);
         }
 
-        // Kapıyı Çiz (Kendi kapı sprite'ını buraya ekleyebilirsin)
         if (door) {
             ctx.fillStyle = '#d35400';
             ctx.fillRect(door.x, door.y, door.width, door.height);
         }
 
-        // Oyuncuyu Çiz (Kendi karakter sprite'ını buraya ekleyebilirsin)
-        ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y, player.width, player.height);
+        player.draw(ctx);
         
+        // ----------------------------------------------------------------------
+
+        ctx.restore(); // KAMERA BİTİŞİ: Ayarları sıfırla
+
+        // Not: ctx.restore() yapmazsak, ekrana yazdıracağımız skor veya 
+        // menü yazıları da oyuncuyla beraber hareket eder ve dev gibi olur.
+
     } else if (gameState === "FINISHED") {
-        // Oyun Bitiş Ekranı
+        // Oyun bitiş yazısı (Kameradan bağımsız, hep ortada durur)
         ctx.fillStyle = '#f1c40f';
         ctx.font = '64px Arial';
         ctx.textAlign = 'center';
@@ -139,13 +133,11 @@ function draw() {
     }
 }
 
-// Oyun Döngüsü
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-// Oyunu Başlat
 loadLevel(currentLevel);
 gameLoop();
