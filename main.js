@@ -20,8 +20,11 @@ const imgWall = new Image();
 imgWall.src = './assets/environment/wallgrey.png';
 
 // hücre kapısı
-const imgCellDoor = new Image();
-imgCellDoor.src = './assets/environment/celldoor2.png';
+const imgCellDoorOpened = new Image();
+imgCellDoorOpened.src = './assets/environment/celldoor2_open.png';
+
+const imgCellDoorClosed = new Image();
+imgCellDoorClosed.src = './assets/environment/celldoor2.png';
 
 // zemin
 const imgGround = new Image();
@@ -29,11 +32,14 @@ imgGround.src = './assets/environment/ground.png';
 
 let walls = [];
 let cellDoors = [];
+let cameras = [];
 let door = null;
+let globalAlarmTriggered = false;
 
 function loadLevel(levelIndex) {
     walls = [];
     cellDoors = [];
+    cameras = [];
     door = null;
     const map = levels[levelIndex];
 
@@ -51,6 +57,9 @@ function loadLevel(levelIndex) {
             }
             else if (tileId === 4) {
                 cellDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE});
+            }
+            else if (tileId === 6){
+                cameras.push(new securityCamera(x, y));
             }
         }
     }
@@ -76,14 +85,44 @@ function update(deltaTime) {
 
     let moveAmount = player.speed * deltaTime;
 
+    // alarmı ayarlıyoruz.
+    globalAlarmTriggered = false;
+
+    // kameraları güncelliyoruz.
+    for(let cam of cameras){
+        cam.update(deltaTime, player);
+    }
+
     if (input.keys['KeyW'] || input.keys['ArrowUp']) { nextY -= moveAmount; isMoving = true; }
     if (input.keys['KeyS'] || input.keys['ArrowDown']) { nextY += moveAmount; isMoving = true; }
     if (input.keys['KeyA'] || input.keys['ArrowLeft']) { nextX -= moveAmount; isMoving = true; player.facingRight = false;}
     if (input.keys['KeyD'] || input.keys['ArrowRight']) { nextX += moveAmount; isMoving = true; player.facingRight = true;}
 
+    // kapıya "e" basıldığında kapının açılması için 
+    // karakterin etrafında bir hitbox oluşturup onun kapıya temas edip etmediğini kontrol edeceğiz.
+    let interactArea = {
+        x: player.x - 5,
+        y: player.y - 5,
+        width: player.width + 10,
+        height: player.height + 10
+    };
+
+    for(let i = 0; i < cellDoors.length; i++){
+        let currentCellDoor = cellDoors[i];
+
+        let isNear = checkCollision(interactArea, currentCellDoor);
+
+        if(isNear){
+            if(input.keys['KeyE'] || input.keys['e'])
+                currentCellDoor.isOpen = true;
+        }else{
+            currentCellDoor.isOpen = false;
+        }
+    }
+
     // Animasyonu güncelle
     player.updateAnimation(isMoving);
-
+/*
     // kapıların açılıp kapanmasını kontrol ediyoruz
     for(let i = 0; i < cellDoors.length; i++){
         let currentCellDoor = cellDoors[i];
@@ -93,13 +132,23 @@ function update(deltaTime) {
             currentCellDoor.isOpen = false;
         }
     }
-
+*/
     let canMoveX = true;
     let canMoveY = true;
 
     for (let wall of walls) {
         if (checkCollision({ x: nextX, y: player.y, width: player.width, height: player.height }, wall)) canMoveX = false;
         if (checkCollision({ x: player.x, y: nextY, width: player.width, height: player.height }, wall)) canMoveY = false;
+    }
+
+    // kapı kapalıysa duvar gibi davransın.
+    for(let cDoor of cellDoors){
+        if(!cDoor.isOpen){
+            if(checkCollision({x: nextX, y: player.y, width: player.width, height: player.height}, cDoor))
+                canMoveX = false;
+            if(checkCollision({x: player.x, y: nextY, width: player.width, height: player.height}, cDoor))
+                canMoveY = false;
+        }
     }
 
     if (canMoveX) player.x = nextX;
@@ -154,9 +203,16 @@ function draw() {
 
         // hücre kapılarını çiziyoruz
         for(let cDoor of cellDoors){
-            if(!cDoor.isOpen){
-                ctx.drawImage(imgCellDoor, cDoor.x, cDoor.y, cDoor.width, cDoor.height);
+            if(cDoor.isOpen){
+                ctx.drawImage(imgCellDoorOpened,cDoor.x, cDoor.y, cDoor.width, cDoor.height);
+            }else{
+                ctx.drawImage(imgCellDoorClosed,cDoor.x, cDoor.y, cDoor.width, cDoor.height);
             }
+        }
+
+        // kameraları çiziyoruz
+        for(let cam of cameras){
+            cam.draw(ctx);
         }
 
         player.draw(ctx);
@@ -164,6 +220,14 @@ function draw() {
         // ----------------------------------------------------------------------
 
         ctx.restore(); // KAMERA BİTİŞİ: Ayarları sıfırla
+
+        // bir UI ile ekranın alt tarafında kameranın aktif olduğunu belirtiyoruz
+        if(globalAlarmTriggered){
+            ctx.fillStyle = 'red';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ALERT!', canvas.width / 2, canvas.height - 50);
+        }
 
         // Not: ctx.restore() yapmazsak, ekrana yazdıracağımız skor veya 
         // menü yazıları da oyuncuyla beraber hareket eder ve dev gibi olur.
