@@ -33,6 +33,7 @@ imgGround.src = './assets/environment/ground.png';
 let walls = [];
 let cellDoors = [];
 let cameras = [];
+let guards = [];
 let door = null;
 let globalAlarmTriggered = false;
 
@@ -57,6 +58,9 @@ function loadLevel(levelIndex) {
             }
             else if (tileId === 4) {
                 cellDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE});
+            }
+            else if (tileId === 5) {
+                guards.push(new Guard(x, y));
             }
             else if (tileId === 6){
                 cameras.push(new securityCamera(x, y));
@@ -92,6 +96,13 @@ function update(deltaTime) {
     for(let cam of cameras){
         cam.update(deltaTime, player);
     }
+
+    for (let guard of guards) {
+    let isCaught = guard.update(deltaTime, player, walls);
+    if (isCaught) {
+        gameState = "GAMEOVER"; // Yakalandıysa oyunu bitir
+    }
+}
 
     if (input.keys['KeyW'] || input.keys['ArrowUp']) { nextY -= moveAmount; isMoving = true; }
     if (input.keys['KeyS'] || input.keys['ArrowDown']) { nextY += moveAmount; isMoving = true; }
@@ -162,7 +173,7 @@ function update(deltaTime) {
 }
 
 // Ne kadar yakınlaşacağımızı belirliyoruz (Örn: 2 kat)
-const zoom = 2; 
+const zoom = 3; 
 
 function draw() {
     // 1. Ekranı temizle
@@ -216,6 +227,10 @@ function draw() {
         }
 
         player.draw(ctx);
+
+        for (let guard of guards) {
+            guard.draw(ctx);
+        }       
         
         // ----------------------------------------------------------------------
 
@@ -238,6 +253,11 @@ function draw() {
         ctx.font = '64px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('KAÇIŞ BAŞARILI!', canvas.width / 2, canvas.height / 2);
+    } else if (gameState === "GAMEOVER") {
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = '64px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('YAKALANDIN!', canvas.width / 2, canvas.height / 2);
     }
 }
 
