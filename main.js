@@ -65,17 +65,21 @@ function checkCollision(rect1, rect2) {
     );
 }
 
-function update() {
+let lastTime = 0;
+
+function update(deltaTime) {
     if (gameState !== "PLAYING") return;
 
     let nextX = player.x;
     let nextY = player.y;
     let isMoving = false; // Başlangıçta hareket yok kabul ediyoruz
 
-    if (input.keys['KeyW'] || input.keys['ArrowUp']) { nextY -= player.speed; isMoving = true; }
-    if (input.keys['KeyS'] || input.keys['ArrowDown']) { nextY += player.speed; isMoving = true; }
-    if (input.keys['KeyA'] || input.keys['ArrowLeft']) { nextX -= player.speed; isMoving = true; player.facingRight = false;}
-    if (input.keys['KeyD'] || input.keys['ArrowRight']) { nextX += player.speed; isMoving = true; player.facingRight = true;}
+    let moveAmount = player.speed * deltaTime;
+
+    if (input.keys['KeyW'] || input.keys['ArrowUp']) { nextY -= moveAmount; isMoving = true; }
+    if (input.keys['KeyS'] || input.keys['ArrowDown']) { nextY += moveAmount; isMoving = true; }
+    if (input.keys['KeyA'] || input.keys['ArrowLeft']) { nextX -= moveAmount; isMoving = true; player.facingRight = false;}
+    if (input.keys['KeyD'] || input.keys['ArrowRight']) { nextX += moveAmount; isMoving = true; player.facingRight = true;}
 
     // Animasyonu güncelle
     player.updateAnimation(isMoving);
@@ -173,11 +177,22 @@ function draw() {
     }
 }
 
-function gameLoop() {
-    update();
+function gameLoop(timestamp) {
+    let deltaTime = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+
+    // Eğer deltaTime çok büyükse (örneğin sekme alta alındıysa) hataları önlemek için sınırla
+    if (deltaTime > 0.1) deltaTime = 0.1;
+
+    update(deltaTime);
     draw();
+    
     requestAnimationFrame(gameLoop);
 }
 
 loadLevel(currentLevel);
-gameLoop();
+
+requestAnimationFrame((timestamp) => {
+    lastTime = timestamp;
+    gameLoop(timestamp);
+});
