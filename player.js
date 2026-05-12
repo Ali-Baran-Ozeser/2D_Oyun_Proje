@@ -27,6 +27,13 @@ class Player {
         this.frameIndex = 0; // 0 veya 1 (Hangi koşma resmi)
         this.animTimer = 0;  // Hız ayarlayıcı
         this.facingRight = true;
+
+        // envanter sistemi
+        this.inventory = {
+            yellow: false,
+            blue: false,
+            red: false
+        };
     }
 
     // Karakter hareket ediyorsa (isMoving = true) bu fonksiyon çalışacak

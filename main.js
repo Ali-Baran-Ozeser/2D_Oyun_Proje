@@ -30,12 +30,39 @@ imgCellDoorClosed.src = './assets/environment/celldoor2.png';
 const imgGround = new Image();
 imgGround.src = './assets/environment/ground.png';
 
+// mavi kapı
+const imgBlueDoor = new Image();
+imgBlueDoor.src = './assets/environment/officedoorblue.png';
+
+// kırmızı kapı
+const imgRedDoor = new Image();
+imgRedDoor.src = './assets/environment/officedoorred.png';
+
+// sarı kapı
+const imgYellowDoor = new Image();
+imgYellowDoor.src = './assets/environment/officedooryellow.png';
+
+// mavi anahtar
+const imgKeyBlue = new Image();
+imgKeyBlue.src = './assets/environment/keyblue.png';
+
+// kırmızı anahtar
+const imgKeyRed = new Image();
+imgKeyRed.src = './assets/environment/keyred.png';
+
+// sarı anahtar (ana kapıyı açacak anahtar)
+const imgKeyYellow = new Image();
+imgKeyYellow.src = './assets/environment/key.png';
+
+
 let walls = [];
 let cellDoors = [];
 let cameras = [];
 let guards = [];
 let door = null;
 let globalAlarmTriggered = false;
+let collectibleKeys = []; // anahtarla açılabilecek kapıları tutacak.
+let coloredDoors = []; // kilitli kapıları tutacak.
 
 function loadLevel(levelIndex) {
     walls = [];
@@ -55,6 +82,7 @@ function loadLevel(levelIndex) {
             else if (tileId === 3) {
                 player.x = x + (TILE_SIZE - player.width) / 2;
                 player.y = y + (TILE_SIZE - player.height) / 2;
+                player.inventory = {yellow: false, blue: false, red: false};
             }
             else if (tileId === 4) {
                 cellDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE});
@@ -64,6 +92,21 @@ function loadLevel(levelIndex) {
             }
             else if (tileId === 6){
                 cameras.push(new securityCamera(x, y));
+            }
+            else if(tileId === 7){
+                collectibleKeys.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'yellow'});
+            }
+            else if(tileId === 8){
+                collectibleKeys.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'blue'});
+            }
+            else if(tileId === 9){
+                collectibleKeys.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'red'});
+            }
+            else if(tileId === 10){
+                coloredDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'blue', isOpen: false});
+            }
+            else if(tileId === 11){
+                coloredDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'red', isOpen: false});
             }
         }
     }
@@ -120,6 +163,25 @@ function update(deltaTime) {
         height: player.height + 10
     };
 
+    // anahtarları topluyoruz.
+    for(let i = collectibleKeys.length - 1; i >= 0; i--){
+        if(checkCollision(player, collectibleKeys[i])){
+            player.inventory[collectibleKeys[i].color] = true; // renge göre inventory'e ekliyoruz.
+            collectibleKeys.splice(i, 1) // anahtar toplandığı için haritadan siliyoruz.
+        }
+    }
+
+    // kilitli kapıları açıp açamadığımızı kontrol ediyoruz. (yine "e"ye basıp açıyoruz.)
+    for(let cDoor of coloredDoors){
+        let isNear = checkCollision(interactArea, cDoor);
+        if(isNear && (input.keys['KeyE'] || input.keys['e'])){
+            if(cDoor.color === 'blue' && player.inventory.blue)
+                cDoor.isOpen = true;
+            if(cDoor.color === 'red' && player.inventory.red)
+                cDoor.isOpen = true;
+        }
+    }
+
     for(let i = 0; i < cellDoors.length; i++){
         let currentCellDoor = cellDoors[i];
 
@@ -154,6 +216,22 @@ function update(deltaTime) {
         if (checkCollision({ x: player.x, y: nextY, width: player.width, height: player.height }, wall)) canMoveY = false;
     }
 
+    for(let cDoor of coloredDoors){
+        if(!cDoor.isOpen){
+            if(checkCollision({x: nextX, y: player.y, width: player.width, height: player.height},cDoor))
+                canMoveX = false;
+            if(checkCollision({x: player.x, y: nextY, width: player.width, height: player.height}, cDoor))
+                canMoveY = false;
+        }
+    }
+
+    if(door){
+        if(checkCollision({x: nextX, y: player.y, width: player.width, height: player.height},door))
+            canMoveX = false;
+        if(checkCollision({x: player.x, y: nextY, width: player.width, height: player.height},door))
+            canMoveY = false;
+    }
+
     // kapı kapalıysa duvar gibi davransın.
     for(let cDoor of cellDoors){
         if(!cDoor.isOpen){
@@ -166,11 +244,23 @@ function update(deltaTime) {
 
     if (canMoveX) player.x = nextX;
     if (canMoveY) player.y = nextY;
-
+/*
     if (door && checkCollision(player, door)) {
         currentLevel++;
         if (currentLevel < levels.length) loadLevel(currentLevel);
         else gameState = "FINISHED";
+    }
+*/
+
+    if(door){
+        let isNearDoor = checkCollision(interactArea, door);
+        if(isNearDoor && (input.keys['KeyE'] || input.keys['e']) && player.inventory.yellow){
+            currentLevel++;
+            if(currentLevel < levels.length)
+                loadLevel(currentLevel);
+            else
+                gameState = "FINISHED";
+        }
     }
 }
 
@@ -209,9 +299,29 @@ function draw() {
             ctx.drawImage(imgWall, wall.x, wall.y, wall.width, wall.height);
         }
 
+        // ana çıkış kapısı burada
         if (door) {
-            ctx.fillStyle = '#d35400';
-            ctx.fillRect(door.x, door.y, door.width, door.height);
+            ctx.drawImage(imgYellowDoor, door.x, door.y, door.width, door.height);
+        }
+
+        // anahtarların çizimi burada
+        for(let key of collectibleKeys){
+            if(key.color === 'yellow')
+                ctx.drawImage(imgKeyYellow, key.x, key.y, key.width, key.height);
+            else if(key.color === 'blue')
+                ctx.drawImage(imgKeyBlue, key.x, key.y, key.width, key.height);
+            else if(key.color === 'red')
+                ctx.drawImage(imgKeyRed, key.x, key.y, key.width, key.height);
+        }
+
+        // kapıların çizimi burada
+        for(let cDoor of coloredDoors){
+            if(!cDoor.isOpen){
+                if(cDoor.color === 'blue')
+                    ctx.drawImage(imgBlueDoor, cDoor.x, cDoor.y, cDoor.width, cDoor.height);
+                else if(cDoor.color === 'red')
+                    ctx.drawImage(imgRedDoor, cDoor.x, cDoor.y, cDoor.width, cDoor.height);
+            }
         }
 
         // hücre kapılarını çiziyoruz
