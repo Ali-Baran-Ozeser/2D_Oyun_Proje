@@ -98,11 +98,13 @@ function update(deltaTime) {
     }
 
     for (let guard of guards) {
-    let isCaught = guard.update(deltaTime, player, walls);
-    if (isCaught) {
-        gameState = "GAMEOVER"; // Yakalandıysa oyunu bitir
+        // cellDoors parametresini de yolluyoruz!
+        let isCaught = guard.update(deltaTime, player, walls, cellDoors);
+        
+        if (isCaught) {
+            gameState = "GAMEOVER";
+        }
     }
-}
 
     if (input.keys['KeyW'] || input.keys['ArrowUp']) { nextY -= moveAmount; isMoving = true; }
     if (input.keys['KeyS'] || input.keys['ArrowDown']) { nextY += moveAmount; isMoving = true; }

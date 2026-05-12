@@ -1,152 +1,174 @@
 // guard.js
 class Guard {
     constructor(x, y) {
-        // Boyutlar (TILE_SIZE 40 iken karakterler 32x32)
         this.width = 24;
         this.height = 24;
-        
-        // Spawn konumunu hücrenin ortasına ayarla
         this.x = x + (32 - this.width) / 2; 
         this.y = y + (32 - this.height) / 2;
 
-        this.speed = 120; // Oyuncudan yavaş
-        this.visionRange = 160; // Görüş alanı (yarıçap)
-        this.facingRight = true;
-        this.state = "WANDER"; // WANDER, CHASE
-
-        // Rastgele dolaşma ayarları
-        this.dirX = 0;
+        this.speed = 120; 
+        this.visionRange = 160; 
+        this.visionAngle = Math.PI / 3; // Görüş açısı (Pasta dilimi: Her iki yöne 60 derece)
+        this.state = "WANDER"; 
+        
+        // Varsayılan bakış yönü (Açı hesaplaması için gerekli)
+        this.dirX = 1; 
         this.dirY = 0;
+        this.facingRight = true;
         this.wanderTimer = 0;
 
-        // --- ASSET YÜKLEME (Player.js ile aynı mantık) ---
+        // --- SİYAHİ/BEYAZ RASTGELE SEÇİMİ ---
+        this.type = Math.random() > 0.5 ? 'cop' : 'cop2';
+
         this.imgIdle = new Image();
-        this.imgIdle.src = "./assets/entity/copidle.png";
+        this.imgIdle.src = `./assets/entity/${this.type}idle.png`;
 
         this.imgK1 = new Image();
-        this.imgK1.src = "./assets/entity/coprun1.png";
+        this.imgK1.src = `./assets/entity/${this.type}run1.png`;
 
         this.imgK2 = new Image();
-        this.imgK2.src = "./assets/entity/coprun2.png";
+        this.imgK2.src = `./assets/entity/${this.type}run2.png`;
 
-        // Koşma resimlerini bir dizide tut
         this.kosmaResimleri = [this.imgK1, this.imgK2];
-        this.currentImage = this.imgIdle; // Başlangıçta idle
+        this.currentImage = this.imgIdle; 
 
-        // Animasyon sayaçları
         this.frameIndex = 0;
         this.animTimer = 0;
     }
 
-    update(deltaTime, player, walls) {
-        // 1. OYUNCU İLE MESAFEYİ ÖLÇ (Pisagor)
+    // UPDATE FONKSİYONUNA cellDoors EKLENDİ!
+    update(deltaTime, player, walls, cellDoors) {
         let dx = player.x - this.x;
         let dy = player.y - this.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
 
-        // 2. YAPAY ZEKA DURUM GEÇİŞLERİ
-        if (distance < this.visionRange) {
-            this.state = "CHASE"; // Alanına girerse kovala
+        // --- 1. PASTA DİLİMİ GÖRÜŞ ALANI (VISION CONE) ---
+        let angleToPlayer = Math.atan2(dy, dx);
+        let guardAngle = Math.atan2(this.dirY, this.dirX); // Gardiyanın anlık baktığı açı
+        
+        // İki açı arasındaki farkı bul ve 0-180 derece arasına sabitle
+        let angleDiff = Math.abs(angleToPlayer - guardAngle);
+        if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+
+        // Oyuncu menzildeyse VE bakış açısının (pasta diliminin) içindeyse kovala
+        if (distance < this.visionRange && angleDiff < this.visionAngle) {
+            this.state = "CHASE";
         } else if (this.state === "CHASE" && distance > this.visionRange * 1.5) {
-            this.state = "WANDER"; // Çok uzaklaşırsa kovalamayı bırak
-            this.wanderTimer = 0; // Hemen yeni yön seçmesi için
+            this.state = "WANDER";
+            this.wanderTimer = 0;
         }
 
-        let nextX = this.x;
-        let nextY = this.y;
+        let moveX = 0;
+        let moveY = 0;
         let moveAmount = this.speed * deltaTime;
         let moving = false;
 
-        // 3. HAREKET MANTIĞI
+        // --- 2. HAREKET VE HÜCRELERE GİRİŞ MANTIĞI ---
         if (this.state === "CHASE") {
-            // Oyuncuya doğru yönel (Vektörü normalize et)
-            if (distance > 5) { // Titremeyi önlemek için çok yakınsa dur
-                nextX += (dx / distance) * moveAmount;
-                nextY += (dy / distance) * moveAmount;
+            let targetDX = dx;
+            let targetDY = dy;
+            let targetDist = distance;
+
+            // HÜCRE SORUNU ÇÖZÜMÜ: Eğer oyuncu bir hücreye (açık kapıya) yakınsa, 
+            // duvarı zorlamak yerine önce açık kapıyı hedef al!
+            for (let door of cellDoors) {
+                if (door.isOpen) {
+                    let distPlayerToDoor = Math.hypot(player.x - door.x, player.y - door.y);
+                    if (distPlayerToDoor < 64) { // Oyuncu kapıya veya hücreye girdiyse
+                        targetDX = door.x - this.x;
+                        targetDY = door.y - this.y;
+                        targetDist = Math.hypot(targetDX, targetDY);
+                        break; 
+                    }
+                }
+            }
+
+            if (targetDist > 5) {
+                moveX = (targetDX / targetDist) * moveAmount;
+                moveY = (targetDY / targetDist) * moveAmount;
                 moving = true;
             }
         } else {
-            // WANDER: Rastgele dolaş
+            // WANDER (Dolaşma)
             this.wanderTimer -= deltaTime;
             if (this.wanderTimer <= 0) {
-                // Rastgele yön seç (Sağ, Sol, Yukarı, Aşağı)
                 let directions = [ {x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1} ];
                 let randomDir = directions[Math.floor(Math.random() * directions.length)];
                 this.dirX = randomDir.x;
                 this.dirY = randomDir.y;
-                
-                // 1 ile 3 saniye arasında bu yönde git
                 this.wanderTimer = 1 + Math.random() * 2; 
             }
-            nextX += this.dirX * moveAmount;
-            nextY += this.dirY * moveAmount;
+            moveX = this.dirX * moveAmount;
+            moveY = this.dirY * moveAmount;
             moving = true;
         }
 
-        // 4. YÖNÜ AYARLA (Aynalama için)
-        // Kovalamada oyuncunun yönüne, dolaşmada hareket yönüne bak
-        let directionCheck = (this.state === "CHASE") ? dx : this.dirX;
-        
-        if (directionCheck > 0) this.facingRight = true;
-        else if (directionCheck < 0) this.facingRight = false;
-
-        // 5. DUVAR ÇARPIŞMALARI (main'deki checkCollision'ı kullanır)
+        // --- 3. DUVARA TAKILMAYI ÖNLEYEN KAYDIRMA VE ÇARPIŞMA SİSTEMİ ---
+        let nextX = this.x + moveX;
+        let nextY = this.y + moveY;
         let canMoveX = true;
         let canMoveY = true;
 
-        for (let wall of walls) {
-            // X Çarpışması
-            if (checkCollision({ x: nextX, y: this.y, width: this.width, height: this.height }, wall)) {
-                canMoveX = false;
-                if (this.state === "WANDER") this.wanderTimer = 0; // Duvara çarparsa yön değiştir
+        let obstacles = [...walls];
+        for (let door of cellDoors) {
+            let distToDoor = Math.hypot(door.x - this.x, door.y - this.y);
+            if (distToDoor < 45) {
+                door.isOpen = true; // Gardiyan yaklaştığında kapı açılır
+            } else if (!door.isOpen) {
+                obstacles.push(door);
             }
-            // Y Çarpışması
-            if (checkCollision({ x: this.x, y: nextY, width: this.width, height: this.height }, wall)) {
+        }
+
+        for (let obs of obstacles) {
+            if (checkCollision({ x: nextX, y: this.y, width: this.width, height: this.height }, obs)) {
+                canMoveX = false;
+                if (this.state === "WANDER") this.wanderTimer = 0;
+            }
+            if (checkCollision({ x: this.x, y: nextY, width: this.width, height: this.height }, obs)) {
                 canMoveY = false;
                 if (this.state === "WANDER") this.wanderTimer = 0;
             }
         }
 
+        // Sadece boş olan eksende kaymaya devam et (Duvara yapışıp kalmayı çözer)
         if (canMoveX) this.x = nextX;
         if (canMoveY) this.y = nextY;
 
-        // 6. ANİMASYON GÜNCELLEME (kosuyorSA)
+        // --- 4. YÖNÜ VE ANİMASYONU GÜNCELLE ---
+        if (moveX !== 0 || moveY !== 0) {
+            // Bakış yönünü hareket edilen vektöre göre güncelle (Görüş açısı için şart)
+            if (Math.abs(moveX) > Math.abs(moveY)) {
+                this.dirX = moveX > 0 ? 1 : -1;
+                this.dirY = 0;
+            } else {
+                this.dirX = 0;
+                this.dirY = moveY > 0 ? 1 : -1;
+            }
+            this.facingRight = this.dirX !== -1;
+        }
+
         if (moving) {
             this.animTimer++;
-            // Her 12 frame'de bir resmi değiştir (yavaş yürüme)
             if (this.animTimer % 12 === 0) {
                 this.frameIndex = (this.frameIndex + 1) % this.kosmaResimleri.length;
                 this.currentImage = this.kosmaResimleri[this.frameIndex];
             }
         } else {
-            this.currentImage = this.imgIdle; // Duruyorsa idle
+            this.currentImage = this.imgIdle;
         }
 
-        // 7. OYUNCUYU YAKALADI MI?
         return checkCollision(this, player);
     }
 
     draw(ctx) {
-        // (İsteğe bağlı) Görüş alanını şeffaf kırmızı çiz (debug için)
-        /*
-        ctx.beginPath();
-        ctx.arc(this.x + this.width/2, this.y + this.height/2, this.visionRange, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255, 0, 0, 0.1)";
-        ctx.fill();
-        */
-
         ctx.save();
-
         if (this.facingRight) {
-            // Sağ (Normal çizim)
             ctx.drawImage(this.currentImage, this.x, this.y, this.width, this.height);
         } else {
-            // Sol (Aynalama)
             ctx.translate(this.x + this.width, this.y); 
             ctx.scale(-1, 1); 
             ctx.drawImage(this.currentImage, 0, 0, this.width, this.height);
         }
-
         ctx.restore();
     }
 }
