@@ -10,7 +10,25 @@ ctx.imageSmoothingEnabled = false;
 // --- OYUN AYARLARI ---
 const TILE_SIZE = 32; // 1280/40 = 32 kolon, 720/40 = 18 satır
 let currentLevel = 0;
-let gameState = "PLAYING"; // PLAYING, FINISHED
+let gameState = "MENU"; // PLAYING, FINISHED
+
+const audioBGM = new Audio('./assets/audio/bgMusic.mp3');
+audioBGM.loop = true;
+const audioKey = new Audio('./assets/audio/keySound.mp3');
+
+let volBGM = 0.5;
+let volSFX = 0.5;
+audioBGM.volume = volBGM;
+
+// --- MOUSE TAKİBİ ---
+const mouse = { x: 0, y: 0, down: false, click: false };
+canvas.addEventListener('mousemove', e => { mouse.x = e.offsetX; mouse.y = e.offsetY; });
+canvas.addEventListener('mousedown', () => { mouse.down = true; mouse.click = true; });
+canvas.addEventListener('mouseup', () => { mouse.down = false; });
+
+function isHover(x, y, w, h) { return mouse.x >= x && mouse.x <= x + w && mouse.y >= y && mouse.y <= y + h; }
+function isClicked(x, y, w, h) { return mouse.click && isHover(x, y, w, h); }
+function isDragging(x, y, w, h) { return mouse.down && isHover(x, y, w, h); }
 
 const player = new Player();
 const input = new InputHandler(); // HATA 1 ÇÖZÜMÜ: Input'u başlattık
@@ -86,7 +104,7 @@ function loadLevel(levelIndex) {
             else if (tileId === 3) {
                 player.x = x + (TILE_SIZE - player.width) / 2;
                 player.y = y + (TILE_SIZE - player.height) / 2;
-                player.inventory = {yellow: false, blue: false, red: false};
+                player.inventory = {yellow: 0, blue: false, red: false};
             }
             else if (tileId === 4) {
                 cellDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE});
@@ -185,8 +203,16 @@ function update(deltaTime) {
     // anahtarları topluyoruz.
     for(let i = collectibleKeys.length - 1; i >= 0; i--){
         if(checkCollision(player, collectibleKeys[i])){
-            player.inventory[collectibleKeys[i].color] = true; // renge göre inventory'e ekliyoruz.
-            collectibleKeys.splice(i, 1) // anahtar toplandığı için haritadan siliyoruz.
+            let color = collectibleKeys[i].color;
+            if (color === 'yellow') player.inventory.yellow++;
+            else player.inventory[color] = true;
+            
+            // Ses Çal
+            audioKey.currentTime = 0;
+            audioKey.volume = volSFX;
+            audioKey.play();
+
+            collectibleKeys.splice(i, 1);
         }
     }
 
@@ -273,11 +299,11 @@ function update(deltaTime) {
 
     if(door){
         let isNearDoor = checkCollision(interactArea, door);
-        if(isNearDoor && (input.keys['KeyE'] || input.keys['e']) && player.inventory.yellow){
-            currentLevel++;
+        if(isNearDoor && (input.keys['KeyE'] || input.keys['e']) && player.inventory.yellow >= 5){
+            /*currentLevel++;
             if(currentLevel < levels.length)
                 loadLevel(currentLevel);
-            else
+            else */
                 gameState = "FINISHED";
         }
     }
@@ -370,28 +396,65 @@ function draw() {
 
         ctx.restore(); // KAMERA BİTİŞİ: Ayarları sıfırla
 
-        // bir UI ile ekranın alt tarafında kameranın aktif olduğunu belirtiyoruz
+        const iconSize = 32; 
+        const posX = canvas.width - 100; // Sağdan uzaklık
+        const posY = 15; // Üstten uzaklık
+
+        // Önce anahtar resmini çiz
+        ctx.drawImage(imgKeyYellow, posX, posY, iconSize, iconSize);
+
+        // Yanına sayıyı yaz
+        ctx.fillStyle = 'white';
+        ctx.font = '28px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`x ${player.inventory.yellow}`, posX + iconSize + 5, posY + 26);
+        
         if(globalAlarmTriggered){
             ctx.fillStyle = 'red';
             ctx.font = '40px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('ALERT!', canvas.width / 2, canvas.height - 50);
         }
+        
+    } else if (gameState === "MENU") {
+        ctx.fillStyle = 'white'; ctx.font = '64px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('HAPİSHANEDEN KAÇIŞ', canvas.width/2, 200);
 
-        // Not: ctx.restore() yapmazsak, ekrana yazdıracağımız skor veya 
-        // menü yazıları da oyuncuyla beraber hareket eder ve dev gibi olur.
+        ctx.fillStyle = isHover(540, 300, 200, 50) ? '#e67e22' : '#d35400';
+        ctx.fillRect(540, 300, 200, 50);
+        ctx.fillStyle = 'white'; ctx.font = '24px Arial'; ctx.fillText('Oyunu Başlat', canvas.width/2, 335);
 
-    } else if (gameState === "FINISHED") {
-        // Oyun bitiş yazısı (Kameradan bağımsız, hep ortada durur)
-        ctx.fillStyle = '#f1c40f';
-        ctx.font = '64px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('KAÇIŞ BAŞARILI!', canvas.width / 2, canvas.height / 2);
-    } else if (gameState === "GAMEOVER") {
-        ctx.fillStyle = '#e74c3c';
-        ctx.font = '64px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('YAKALANDIN!', canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = isHover(540, 380, 200, 50) ? '#7f8c8d' : '#95a5a6';
+        ctx.fillRect(540, 380, 200, 50);
+        ctx.fillStyle = 'white'; ctx.fillText('Ayarlar', canvas.width/2, 415);
+
+    } else if (gameState === "SETTINGS") {
+        ctx.fillStyle = 'white'; ctx.font = '48px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('AYARLAR', canvas.width/2, 150);
+
+        // Müzik Barı
+        ctx.font = '24px Arial'; ctx.fillText('Müzik Sesi', canvas.width/2, 250);
+        ctx.fillStyle = '#555'; ctx.fillRect(440, 280, 400, 20); // Arkaplan
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(440, 280, 400 * volBGM, 20); // Doluluk
+
+        // Efekt Barı
+        ctx.fillStyle = 'white'; ctx.fillText('Efekt Sesi', canvas.width/2, 360);
+        ctx.fillStyle = '#555'; ctx.fillRect(440, 390, 400, 20); 
+        ctx.fillStyle = '#3498db'; ctx.fillRect(440, 390, 400 * volSFX, 20); 
+
+        // Geri Butonu
+        ctx.fillStyle = isHover(540, 500, 200, 50) ? '#c0392b' : '#e74c3c';
+        ctx.fillRect(540, 500, 200, 50);
+        ctx.fillStyle = 'white'; ctx.fillText('Geri', canvas.width/2, 535);
+
+    } else if (gameState === "FINISHED" || gameState === "GAMEOVER") {
+        ctx.fillStyle = gameState === "FINISHED" ? '#f1c40f' : '#e74c3c';
+        ctx.font = '64px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(gameState === "FINISHED" ? 'KAÇIŞ BAŞARILI!' : 'YAKALANDIN!', canvas.width/2, 250);
+
+        ctx.fillStyle = isHover(540, 350, 200, 50) ? '#27ae60' : '#2ecc71';
+        ctx.fillRect(540, 350, 200, 50);
+        ctx.fillStyle = 'white'; ctx.font = '24px Arial'; ctx.fillText('Tekrar Oyna', canvas.width/2, 385);
     }
 }
 
@@ -401,6 +464,22 @@ function gameLoop(timestamp) {
 
     // Eğer deltaTime çok büyükse (örneğin sekme alta alındıysa) hataları önlemek için sınırla
     if (deltaTime > 0.1) deltaTime = 0.1;
+
+    if (gameState === "MENU") {
+        if (isClicked(540, 300, 200, 50)) { gameState = "PLAYING"; audioBGM.play(); }
+        if (isClicked(540, 380, 200, 50)) { gameState = "SETTINGS"; }
+    } else if (gameState === "SETTINGS") {
+        if (isDragging(440, 270, 400, 40)) { volBGM = (mouse.x - 440) / 400; volBGM = Math.max(0, Math.min(1, volBGM)); audioBGM.volume = volBGM; }
+        if (isDragging(440, 380, 400, 40)) { volSFX = (mouse.x - 440) / 400; volSFX = Math.max(0, Math.min(1, volSFX)); }
+        if (isClicked(540, 500, 200, 50)) { gameState = "MENU"; }
+    } else if (gameState === "FINISHED" || gameState === "GAMEOVER") {
+        if (isClicked(540, 350, 200, 50)) { 
+            loadLevel(currentLevel); // Oyunu sıfırla
+            gameState = "PLAYING"; 
+        }
+    }
+
+    mouse.click = false;
 
     update(deltaTime);
     draw();
