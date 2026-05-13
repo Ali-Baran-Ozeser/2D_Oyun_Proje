@@ -54,6 +54,9 @@ imgKeyRed.src = './assets/environment/keyred.png';
 const imgKeyYellow = new Image();
 imgKeyYellow.src = './assets/environment/key.png';
 
+const imgBed = new Image();
+imgBed.src = './assets/environment/bed.png';
+
 
 let walls = [];
 let cellDoors = [];
@@ -63,6 +66,7 @@ let door = null;
 let globalAlarmTriggered = false;
 let collectibleKeys = []; // anahtarla açılabilecek kapıları tutacak.
 let coloredDoors = []; // kilitli kapıları tutacak.
+let beds = [];
 
 function loadLevel(levelIndex) {
     walls = [];
@@ -94,19 +98,22 @@ function loadLevel(levelIndex) {
                 cameras.push(new securityCamera(x, y));
             }
             else if(tileId === 7){
-                collectibleKeys.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'yellow'});
+                collectibleKeys.push({x: x + 8, y: y + 8, width: 16, height: 16, color: 'yellow'});
             }
             else if(tileId === 8){
-                collectibleKeys.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'blue'});
+                collectibleKeys.push({x: x + 8, y: y + 8, width: 16, height: 16, color: 'blue'});
             }
             else if(tileId === 9){
-                collectibleKeys.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'red'});
+                collectibleKeys.push({x: x + 8, y: y + 8, width: 16, height: 16, color: 'red'});
             }
             else if(tileId === 10){
                 coloredDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'blue', isOpen: false});
             }
             else if(tileId === 11){
                 coloredDoors.push({x: x, y: y, width: TILE_SIZE, height: TILE_SIZE, color: 'red', isOpen: false});
+            }
+            else if(tileId === 12){
+                beds.push({x: x, y: y, width: 28, height: 28});
             }
         }
     }
@@ -140,11 +147,23 @@ function update(deltaTime) {
         cam.update(deltaTime, player);
     }
 
+    player.isHidden = false;
+    for (let bed of beds) {
+        if (checkCollision(player, bed)) {
+            player.isHidden = true;
+            break;
+        }
+    }
+
+    // Karakter saklanıyorsa gardiyanlara çok uzakta sahte bir hedef göster (kovalamayı bırakıp son konumu araştırırlar)
+    let targetPlayer = player.isHidden ? { x: -9999, y: -9999, width: 0, height: 0 } : player;
+
     for (let guard of guards) {
-        // cellDoors parametresini de yolluyoruz!
-        let isCaught = guard.update(deltaTime, player, walls, cellDoors);
+        // Hedef olarak targetPlayer'ı gönderiyoruz
+        let isCaught = guard.update(deltaTime, targetPlayer, walls, cellDoors);
         
-        if (isCaught) {
+        // Sadece saklanmıyorken yakalanabilir
+        if (isCaught && !player.isHidden) {
             gameState = "GAMEOVER";
         }
     }
@@ -345,6 +364,9 @@ function draw() {
         }       
         
         // ----------------------------------------------------------------------
+        for (let bed of beds) {
+            ctx.drawImage(imgBed, bed.x, bed.y, bed.width, bed.height);
+        }
 
         ctx.restore(); // KAMERA BİTİŞİ: Ayarları sıfırla
 
