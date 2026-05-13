@@ -7,19 +7,6 @@ document.body.appendChild(canvas);
 
 ctx.imageSmoothingEnabled = false;
 
-// --- OYUN AYARLARI ---
-const TILE_SIZE = 32; // 1280/40 = 32 kolon, 720/40 = 18 satır
-let currentLevel = 0;
-let gameState = "MENU"; // PLAYING, FINISHED
-
-const audioBGM = new Audio('./assets/audio/bgMusic.mp3');
-audioBGM.loop = true;
-const audioKey = new Audio('./assets/audio/keySound.mp3');
-
-let volBGM = 0.5;
-let volSFX = 0.5;
-audioBGM.volume = volBGM;
-
 // --- MOUSE TAKİBİ ---
 const mouse = { x: 0, y: 0, down: false, click: false };
 canvas.addEventListener('mousemove', e => { mouse.x = e.offsetX; mouse.y = e.offsetY; });
@@ -33,64 +20,16 @@ function isDragging(x, y, w, h) { return mouse.down && isHover(x, y, w, h); }
 const player = new Player();
 const input = new InputHandler(); // HATA 1 ÇÖZÜMÜ: Input'u başlattık
 
-// duvar
-const imgWall = new Image();
-imgWall.src = './assets/environment/wallgrey.png';
-
-// hücre kapısı
-const imgCellDoorOpened = new Image();
-imgCellDoorOpened.src = './assets/environment/celldoor2_open.png';
-
-const imgCellDoorClosed = new Image();
-imgCellDoorClosed.src = './assets/environment/celldoor2.png';
-
-// zemin
-const imgGround = new Image();
-imgGround.src = './assets/environment/ground.png';
-
-// mavi kapı
-const imgBlueDoor = new Image();
-imgBlueDoor.src = './assets/environment/officedoorblue.png';
-
-// kırmızı kapı
-const imgRedDoor = new Image();
-imgRedDoor.src = './assets/environment/officedoorred.png';
-
-// sarı kapı
-const imgYellowDoor = new Image();
-imgYellowDoor.src = './assets/environment/officedooryellow.png';
-
-// mavi anahtar
-const imgKeyBlue = new Image();
-imgKeyBlue.src = './assets/environment/keyblue.png';
-
-// kırmızı anahtar
-const imgKeyRed = new Image();
-imgKeyRed.src = './assets/environment/keyred.png';
-
-// sarı anahtar (ana kapıyı açacak anahtar)
-const imgKeyYellow = new Image();
-imgKeyYellow.src = './assets/environment/key.png';
-
-const imgBed = new Image();
-imgBed.src = './assets/environment/bed.png';
-
-
-let walls = [];
-let cellDoors = [];
-let cameras = [];
-let guards = [];
-let door = null;
-let globalAlarmTriggered = false;
-let collectibleKeys = []; // anahtarla açılabilecek kapıları tutacak.
-let coloredDoors = []; // kilitli kapıları tutacak.
-let beds = [];
-
 function loadLevel(levelIndex) {
     walls = [];
     cellDoors = [];
     cameras = [];
+    guards = [];        // Eksik olan satır: Gardiyanları temizler
+    beds = [];          // Yatakları temizler
+    collectibleKeys = []; // Anahtarları temizler
+    coloredDoors = [];   // Renkli kapıları temizler
     door = null;
+
     const map = levels[levelIndex];
 
     for (let row = 0; row < map.length; row++) {
@@ -177,6 +116,8 @@ function update(deltaTime) {
     let targetPlayer = player.isHidden ? { x: -9999, y: -9999, width: 0, height: 0 } : player;
 
     for (let guard of guards) {
+
+        guard.speed = globalAlarmTriggered ? 200 : 120;
         // Hedef olarak targetPlayer'ı gönderiyoruz
         let isCaught = guard.update(deltaTime, targetPlayer, walls, cellDoors);
         
@@ -409,12 +350,6 @@ function draw() {
         ctx.textAlign = 'left';
         ctx.fillText(`x ${player.inventory.yellow}`, posX + iconSize + 5, posY + 26);
         
-        if(globalAlarmTriggered){
-            ctx.fillStyle = 'red';
-            ctx.font = '40px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('ALERT!', canvas.width / 2, canvas.height - 50);
-        }
         
     } else if (gameState === "MENU") {
         ctx.fillStyle = 'white'; ctx.font = '64px Arial'; ctx.textAlign = 'center';
