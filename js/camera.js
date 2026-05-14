@@ -1,23 +1,25 @@
 class securityCamera{
-    constructor(x, y, startAngle = Math.PI / 2){ // direkt aşağı bakacak şekilde başlayacak.
+    constructor(x, y, startAngle = Math.PI / 2){ // Direkt aşağı bakacak şekilde başlayacak.
         this.x = x;
         this.y = y;
         this.range = 150;
-        this.fov = Math.PI / 3; // 60 derece olarak bakacak.
+        this.fov = Math.PI / 3; // 60 derece olarak bakacak. (Pasta dilimi şeklinde)
         this.angle = startAngle;
 
-        // sağa sola dönmeyi ayarlayacak.
-        this.minAngle = startAngle - (Math.PI / 4) // sola max dönüş için
-        this.maxAngle = startAngle + (Math.PI / 4) // sağa max dönüş için
-        this.rotationSpeed = 0.5; // dönüş hızı
-        this.turnDirection = 1; // 1 -> sağa -1-> sola dönüş
+        // Sağa sola dönmeyi ayarlıyoruz
+        this.minAngle = startAngle - (Math.PI / 3) // Sola max dönüş için
+        this.maxAngle = startAngle + (Math.PI / 3) // Sağa max dönüş için
+        this.rotationSpeed = 0.8; 
+        this.turnDirection = 1; 
 
-        this.isAlert = false; // oyuncuyu görürse true olacak.
+        this.isAlert = false; 
     }
 
+    // Kamera Davranışı ve Alarm Kontrolü
     update(deltaTime,player){
         this.angle += this.rotationSpeed * this.turnDirection * deltaTime;
 
+        // Sınır kontrolü
         if(this.angle >= this.maxAngle){
             this.angle = this.maxAngle;
             this.turnDirection = -1;
@@ -26,6 +28,7 @@ class securityCamera{
             this.turnDirection = 1;
         }
 
+        // Tespit Sistemi
         this.isAlert = this.checkPlayerInView(player);
 
         if(this.isAlert)
@@ -33,7 +36,7 @@ class securityCamera{
     }
 
     checkPlayerInView(player){
-        // kamera ve oyuncunun orta noktalarını bulup farklarına bakıyoruz. Aradaki mesafeyi buluyoruz ve bu mesafeyi kontrol ediyoruz.
+        // Kamera ve oyuncunun orta noktalarını bulup farklarına bakıyoruz. Aradaki mesafeyi buluyoruz ve bu mesafeyi kontrol ediyoruz.
         let cx = this.x + TILE_SIZE / 2;
         let cy = this.y + TILE_SIZE / 2;
         let px = player.x + player.width / 2;
@@ -57,11 +60,12 @@ class securityCamera{
         return false;
     }
 
+    // Kamera Çizimi
     draw(ctx){
         let cx = this.x + TILE_SIZE / 2;
         let cy = this.y + TILE_SIZE / 2;
 
-        // görüş alanı ve ışığı çiziyoruz. (alarmda ise kırmızı, değilse sarı yanacak)
+        // Görüş Alanı ve Işık Çizimi (Alarmda ise kırmızı, değilse sarı yanacak)
         ctx.fillStyle = this.isAlert ? 'rgba(231, 76, 60, 0.4)' : 'rgba(234, 193, 30, 0.3)';
 
         ctx.beginPath();
