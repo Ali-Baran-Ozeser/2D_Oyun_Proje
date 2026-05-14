@@ -13,17 +13,17 @@ Projeyi bilgisayarınıza indirmek için terminalinize aşağıdaki komutu yazab
 `git clone https://github.com/Ali-Baran-Ozeser/2D_Oyun_Proje.git`
 
 ## Projeyi Nasıl Çalıştırırsınız?
-İndirdiğiniz klasörün içindeki `index.html` dosyasına çift tıklayarak herhangi bir modern tarayıcıda (Chrome, Edge, Safari vb.) hemen oynayabilirsiniz.
+İndirdiğiniz klasörün içindeki `index.html` dosyasına çift tıklayarak herhangi bir modern tarayıcıda (Chrome, Edge, Safari vb.) hemen oynayabilirsiniz. Oyunu indirmeden oynayabilmek için `https://ali-baran-ozeser.github.io/2D_Oyun_Proje/` adresini ziyaret edebilirsiniz.
 
-## Nasıl Oynanır? (Oyun İçi Test ve Kullanım)
+## Nasıl Oynanır?
 * **W, A, S, D / Yön Tuşları:** Hareket
 * **E:** Kapıları açma ve nesnelerle etkileşim
 * *Not:* Gardiyanlardan saklanmak için yatakların altına girebilirsiniz!
 
-## Projeye Eklemek İstediklerimiz (Gelecek Planları)
+## Projeye Eklemek İstediklerimiz
 * UI (Kullanıcı Arayüzü) geliştirmeleri
-* Kamera sarsıntısı (Screenshake) gibi görsel efektler.
-* Yeni harita tasarımları ve farklı gardiyan yapay zekaları.
+* Kamera sarsıntısı gibi görsel efektler
+* Yeni harita tasarımları ve farklı gardiyan yapay zekaları
 
 ## Geliştirenler
 * Ali Baran Özeser 24360859031
