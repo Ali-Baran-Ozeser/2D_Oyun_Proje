@@ -16,7 +16,7 @@ Projeyi bilgisayarınıza indirmek için terminalinize aşağıdaki komutu yazab
 `git clone https://github.com/Ali-Baran-Ozeser/2D_Oyun_Proje.git`
 
 ## Projeyi Nasıl Çalıştırırsınız?
-İndirdiğiniz klasörün içindeki `index.html` dosyasına çift tıklayarak herhangi bir modern tarayıcıda (Chrome, Edge, Safari vb.) hemen oynayabilirsiniz. Oyunu indirmeden oynayabilmek için `https://ali-baran-ozeser.github.io/2D_Oyun_Proje/` adresini ziyaret edebilirsiniz.
+İndirdiğiniz klasörün içindeki `index.html` dosyasına çift tıklayarak herhangi bir modern tarayıcıda (Chrome, Edge, Safari vb.) hemen oynayabilirsiniz. Oyunu indirmeden oynayabilmek için (https://ali-baran-ozeser.github.io/2D_Oyun_Proje/) adresini ziyaret edebilirsiniz.
 
 ## Nasıl Oynanır?
 * **W, A, S, D / Yön Tuşları:** Hareket
