@@ -32,10 +32,18 @@ Tek Oyunculu (Singleplayer): Tüm kodlar ve görseller (assetler) oyuncunun ciha
 
 Çok Oyunculu (Multiplayer): Tarayıcı sadece çizim ve girdi alma işlemlerini yapar. Vuruldun mu, nereye hareket ettin gibi kritik hesaplamalar hile yapılmaması için uzaktaki bir Sunucuda (Server) hesaplanır ve anlık olarak (WebSockets ile) oyuncunun tarayıcısına iletilir.
 
+
+---
+
+
 **Prompt:** oyun içinde bir kamera sistemi yapmak istiyorum. bu kamera belli açıda alanı taraması gerekiyor. bunun için kullanmam gereken matematiği açıklayabilir misin?
 
 
 **Cevap:** Bir gizlilik oyununda (örneğin yukarıdan bakışlı bir hırsızlık veya sızma oyununda) güvenlik kameralarının veya devriye gezen düşmanların görüş alanını (Field of View - FOV) hesaplamak için vektör matematiği ve trigonometri kullanman gerekir.Bu sistemi koda dökerken temelde 3 adımlı bir matematiksel kontrol yaparsın: Tarama (Hareket), Mesafe Kontrolü ve Açı Kontrolü.1. Kameranın Tarama Hareketi (Sinüs Fonksiyonu)Kameranın sabit bir noktada sağa ve sola yumuşak bir şekilde dönmesi (taraması) için en iyi yöntem bir Sinüs ($sin$) fonksiyonu kullanmaktır. Sinüs dalgası -1 ile +1 arasında değerler ürettiği için, zamana bağlı mükemmel bir salınım sağlar.Kameranın o anki bakış açısını şu formülle hesaplayabilirsin:$$ \text{Güncel Açı} = \text{Merkez Açı} + \sin(\text{Zaman} \times \text{Tarama Hızı}) \times \text{Tarama Genişliği} $$Zaman: Oyundaki geçen süre (örneğin Time.time veya milisaniye).Tarama Genişliği: Kameranın merkezden ne kadar sağa/sola sapacağı (örneğin 45 derece).2. Mesafe Kontrolü (Pisagor Teoremi)Karakterin kameranın görüş açısında olup olmadığını kontrol etmeden önce, kameranın menzili içinde olup olmadığına bakmak performansı artırır. İki nokta (Kamera $C$ ve Oyuncu $P$) arasındaki mesafeyi Öklid uzaklığı ile bulursun:$$ \text{Mesafe} = \sqrt{(P_x - C_x)^2 + (P_y - C_y)^2} $$Eğer $\text{Mesafe} \le \text{Kamera Menzili}$ şartı sağlanıyorsa, karakter kameraya yeterince yakındır ve bir sonraki adım olan açı kontrolüne geçilir.3. Açı Kontrolü (Dot Product veya Atan2)Karakterin, kameranın "görüş konisi" içinde kalıp kalmadığını anlamanın iki yaygın yolu vardır. 2D oyunlar (özellikle JavaScript Canvas projeleri) için Atan2 çok pratikken, oyun motorlarında vektörlerin Nokta Çarpımı (Dot Product) daha sık kullanılır.Yöntem A: Yön Vektörleri ve Nokta Çarpım (Dot Product)Kameranın baktığı yönü belirten bir ileri vektörü ($\vec{F}$) ve kameradan oyuncuya doğru çizilen bir hedef vektörü ($\vec{D}$) olduğunu varsayalım. Bu iki vektör arasındaki açıyı ($\theta$) bulmak için Nokta Çarpım kuralı kullanılır:$$ \vec{F} \cdot \vec{D} = |\vec{F}| |\vec{D}| \cos(\theta) $$Vektörleri birim vektör (uzunluğu 1 olan normalize edilmiş vektör) haline getirirsen, nokta çarpım sana doğrudan aralarındaki açının kosinüsünü verir. Buradan açıyı bulup, kameranın toplam Görüş Açısının (FOV) yarısından küçük olup olmadığını kontrol edersin:$$ \theta = \arccos(\vec{F_{norm}} \cdot \vec{D_{norm}}) $$$$ \text{Şart: } \theta \le \frac{\text{FOV}}{2} $$Yöntem B: Trigonometrik Açı (Math.atan2)2D bir düzlemde çalışıyorsan, X ve Y koordinat farklarından yola çıkarak karakterin kameraya göre mutlak açısını bulabilirsin:$$ \text{Hedef Açısı} = \text{atan2}(P_y - C_y, P_x - C_x) $$Sonrasında kameranın baktığı açı ile hedefin açısı arasındaki mutlak farkı alırsın. Eğer bu fark $\frac{\text{FOV}}{2}$ değerinden küçükse, karakter kameranın görüş alanındadır.
+
+
+--
+
 
 **Prompt:** oyun benim bilgisayarımda ve arkadaşımın bilgisayarında farklı hızda çalışıyor. Bu problemi nasıl çözebiliriz?
 
@@ -82,6 +90,10 @@ function oyunDongusu(suAnkiZaman) {
 
 // Oyunu başlat
 requestAnimationFrame(oyunDongusu);`
+
+
+---
+
 
 **Prompt:** Haritam Canvas'tan büyük. Karakter hareket ettikçe Canvas'ın karakteri ortalayarak takip etmesi için ne yapmalıyım?
 
