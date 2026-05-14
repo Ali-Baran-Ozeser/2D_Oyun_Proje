@@ -3,6 +3,9 @@
 ## Projenin Genel Özeti
 2D Pixel Art tarzında, gizlilik odaklı bir hapishaneden kaçış oyunudur. Oyuncunun amacı; devriye gezen gardiyanlara ve güvenlik kameralarına yakalanmadan gerekli anahtarları toplayıp çıkış kapısına ulaşmaktır.
 
+## Referans Alınan Oyun
+[Tiny Thief](https://blizzardspellstudio.itch.io/tiny-thief)
+
 ## Kullanılan Teknolojiler
 * HTML5 (Canvas API)
 * Vanilla JavaScript
