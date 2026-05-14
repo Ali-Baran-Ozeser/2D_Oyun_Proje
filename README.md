@@ -14,12 +14,16 @@ Projeyi bilgisayarınıza indirmek için terminalinize aşağıdaki komutu yazab
 
 ## Projeyi Nasıl Çalıştırırsınız?
 İndirdiğiniz klasörün içindeki `index.html` dosyasına çift tıklayarak herhangi bir modern tarayıcıda (Chrome, Edge, Safari vb.) hemen oynayabilirsiniz. Oyunu indirmeden oynayabilmek için `https://ali-baran-ozeser.github.io/2D_Oyun_Proje/` adresini ziyaret edebilirsiniz.
-<img width="679" height="486" alt="image" src="https://github.com/user-attachments/assets/90004500-cce8-4c6a-876e-f5e1ead89d7f" />
 
 ## Nasıl Oynanır?
 * **W, A, S, D / Yön Tuşları:** Hareket
 * **E:** Kapıları açma ve nesnelerle etkileşim
 * *Not:* Gardiyanlardan saklanmak için yatakların altına girebilirsiniz!
+
+## Oyun İçi Görüntüler
+<img width="767" height="336" alt="image" src="https://github.com/user-attachments/assets/cfc5a820-b30d-49be-8815-8af5f8350b6f" />
+<img width="462" height="310" alt="image" src="https://github.com/user-attachments/assets/8ba5ec1a-2404-4963-af6e-647154a205b9" />
+<img width="435" height="310" alt="image" src="https://github.com/user-attachments/assets/f4d0cb2a-5d03-4040-a87f-c29b35379af5" />
 
 ## Projeye Eklemek İstediklerimiz
 * UI (Kullanıcı Arayüzü) geliştirmeleri
