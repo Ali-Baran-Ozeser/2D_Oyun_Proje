@@ -18,7 +18,7 @@ audioBGM.volume = volBGM;
 const imgWall = new Image(); imgWall.src = './assets/environment/wallgrey.png';
 const imgCellDoorOpened = new Image(); imgCellDoorOpened.src = './assets/environment/celldoor2_open.png';
 const imgCellDoorClosed = new Image(); imgCellDoorClosed.src = './assets/environment/celldoor2.png';
-const imgGround = new Image(); imgGround.src = './assets/environment/ground.png';
+const imgGround = new Image(); imgGround.src = './assets/environment/floor.png';
 const imgBlueDoor = new Image(); imgBlueDoor.src = './assets/environment/officedoorblue.png';
 const imgRedDoor = new Image(); imgRedDoor.src = './assets/environment/officedoorred.png';
 const imgYellowDoor = new Image(); imgYellowDoor.src = './assets/environment/officedooryellow.png';
