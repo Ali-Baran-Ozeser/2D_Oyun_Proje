@@ -97,20 +97,22 @@ Bu kavramların birbiriyle nasıl etkileşime girdiğini ve parametrelerin taram
 
 **Cevap:** Bu, oyun geliştirmeye başlayan herkesin karşılaştığı en klasik ve en önemli sorunlardan biridir! Oyun dünyasına hoş geldin. :)
 
-Oyununun iki farklı bilgisayarda farklı hızlarda çalışmasının sebebi, hareket ve fizik hesaplamalarını karelere (frame) bağlı olarak yapmış olmandır.
+Oyununun iki farklı bilgisayarda farklı hızlarda çalışmasının sebebi, hareket ve fizik hesaplamalarını **karelere (frame)** bağlı olarak yapmış olmandır.
 
-Eğer oyun döngünde (muhtemelen requestAnimationFrame kullanıyorsun) karakterin pozisyonunu her karede sabit bir miktar artırıyorsan (örneğin x += 5), 60Hz monitörü olan ve saniyede 60 kare (FPS) çizen bir bilgisayarda karakterin saniyede 300 piksel hareket eder. Ancak arkadaşının 144Hz oyuncu monitörü varsa veya bilgisayarı çok daha güçlüyse, saniyede 144 kare çizer ve karakteri 720 piksel hareket eder! Arkadaşının bilgisayarında oyun adeta "ileri sarılmış" gibi görünür.
+Eğer oyun döngünde (muhtemelen `requestAnimationFrame` kullanıyorsun) karakterin pozisyonunu her karede sabit bir miktar artırıyorsan (örneğin `x += 5`), 60Hz monitörü olan ve saniyede 60 kare (FPS) çizen bir bilgisayarda karakterin saniyede **300 piksel** hareket eder. Ancak arkadaşının 144Hz oyuncu monitörü varsa veya bilgisayarı çok daha güçlüyse, saniyede 144 kare çizer ve karakteri **720 piksel** hareket eder! Arkadaşının bilgisayarında oyun adeta "ileri sarılmış" gibi görünür.
 
-Bu problemi çözmenin altın kuralı Delta Time (Zaman Farkı) kullanmaktır.
+Bu problemi çözmenin altın kuralı **Delta Time (Zaman Farkı)** kullanmaktır.
 
-Çözüm: Delta Time Nedir ve Nasıl Kullanılır?
-Oyununu kareye bağlı olmaktan çıkarıp zamana bağlı hale getirmelisin. Karakterin "her karede 5 piksel" değil, "her saniyede 300 piksel" hareket etmesini söylemelisin.
+### Çözüm: Delta Time Nedir ve Nasıl Kullanılır?
+
+Oyununu *kareye bağlı* olmaktan çıkarıp *zamana bağlı* hale getirmelisin. Karakterin "her karede 5 piksel" değil, "her **saniyede** 300 piksel" hareket etmesini söylemelisin.
 
 Bunun için son çizilen kare ile şu anki kare arasında geçen süreyi (Delta Time) hesaplayıp, hareket hızınla çarpman gerekir.
 
 İşte JavaScript'te bunu nasıl yapacağının basit bir örneği:
 
-`let sonKareZamani = 0;
+```javascript
+let sonKareZamani = 0;
 let karakterX = 50;
 let hizSaniyede = 300; // Karakter saniyede 300 piksel gitsin
 
@@ -136,8 +138,13 @@ function oyunDongusu(suAnkiZaman) {
 }
 
 // Oyunu başlat
-requestAnimationFrame(oyunDongusu);`
+requestAnimationFrame(oyunDongusu);
 
+```
+
+Aşağıdaki simülasyonda bu mantığın nasıl çalıştığını FPS ayarını değiştirerek kendi gözlerinle görebilirsin:
+
+Bu mantığı sadece oyuncunun yürümesine değil; düşman devriyelerine, mermi hızlarına, zıplama yerçekimine ve zamanla değişen her şeye (örneğin kameranın dönme hızına) uygulamalısın. Böylece oyunun ister hesap makinesinde ister NASA bilgisayarında çalışsın, herkes için aynı adil hızda oynanacaktır!
 
 ---
 
