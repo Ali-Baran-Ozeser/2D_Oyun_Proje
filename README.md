@@ -33,3 +33,14 @@ Projeyi bilgisayarınıza indirmek için terminalinize aşağıdaki komutu yazab
 ## Geliştirenler
 * Ali Baran Özeser 24360859031
 * İsmail Bilgin 23360859051
+
+## Kaynakça (Credits / Assets)
+
+Bu projede kullanılan görsel ve işitsel varlıklar aşağıdaki kaynaklardan temin edilmiştir:
+
+### Görseller (Graphics)
+* **Oyun Assetleri:** [Prison Game Asset Pack](https://adarshs.itch.io/prison-game-asset-pack)
+
+### Sesler (Audio)
+* **Arka Plan Müziği:** Suno AI kullanılarak bu proje için özel olarak üretilmiştir.
+* **Ses Efektleri (SFX):** [MyInstants](https://www.myinstants.com/en/index/hk/) üzerinden temin edilmiştir.
